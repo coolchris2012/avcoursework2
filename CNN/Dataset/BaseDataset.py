@@ -25,6 +25,23 @@ class BaseDataset(Dataset):
     def __getitem__(self, index):
         raise NotImplementedError("Child classes must implement __getitem__()")
     
+    def _extract_classes(self) -> list[str]:
+        """Extract unique class names from filenames by removing digits."""
+        class_names = set()
+        for path in self.paths:
+            # Filename format: "name001.npy" -> extract "name"
+            filename = path.stem  # Remove .npy extension
+            # Remove trailing digits to get class name
+            class_name = ''.join([c for c in filename if not c.isdigit()])
+            class_names.add(class_name)
+        
+        return sorted(list(class_names))
+    
+    def _get_label_from_filename(self, filename: str) -> str:
+        """Extract class label from filename by removing digits."""
+        class_name = ''.join([c for c in filename if not c.isdigit()])
+        return class_name
+    
 
 
 
@@ -33,7 +50,52 @@ class BaseDataset(Dataset):
                     batch_size: int = config.BATCH_SIZE,
                     num_workers: int = config.NUM_WORKERS,
                     ):
-        return DataLoader(self, batch_size=batch_size, num_workers=num_workers, shuffle=shuffle)
+        return DataLoader(
+            self, 
+            batch_size=batch_size, 
+            num_workers=num_workers, 
+            shuffle=shuffle,
+            collate_fn=self.collate_fn  # Use custom collate for variable-length padding
+        )
+    
+    @staticmethod
+    def collate_fn(batch):
+        """
+        Custom collate function to handle variable-length sequences.
+        Pads all sequences to the maximum length in the batch.
+        
+        Args:
+            batch: List of tuples (features, label_idx)
+        
+        Returns:
+            features_batch: Padded tensor of shape (batch_size, 1, max_frames, num_features)
+            labels_batch: Tensor of shape (batch_size,)
+        """
+        features, labels = zip(*batch)
+        
+        # Find maximum number of frames in this batch
+        max_frames = max(feat.shape[1] for feat in features)
+        
+        # Pad all features to max_frames
+        padded_features = []
+        for feat in features:
+            # feat shape: (1, num_frames, num_features)
+            current_frames = feat.shape[1]
+            pad_amount = max_frames - current_frames
+            
+            # Pad along the frame dimension (dim=1)
+            if pad_amount > 0:
+                padded = torch.nn.functional.pad(feat, (0, 0, 0, pad_amount), value=0)
+            else:
+                padded = feat
+            
+            padded_features.append(padded)
+        
+        # Stack into batch tensor
+        features_batch = torch.stack(padded_features, dim=0)
+        labels_batch = torch.LongTensor(labels)
+        
+        return features_batch, labels_batch
 
 
     @classmethod

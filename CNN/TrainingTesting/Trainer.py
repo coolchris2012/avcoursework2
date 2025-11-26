@@ -71,7 +71,7 @@ class Trainer:
         avg_loss = total_loss / num_batches
         return avg_loss
     
-    def train(self, num_epochs=None, save_path=None):
+    def train(self, save_path, num_epochs=config.NUM_EPOCHS):
         """
         Run the full training loop.
         
@@ -82,10 +82,6 @@ class Trainer:
         Returns:
             history: Dictionary containing training history
         """
-        if num_epochs is None:
-            num_epochs = config.NUM_EPOCHS
-        if save_path is None:
-            save_path = config.MODEL_SAVE_PATH
         
         print(f"\n{'='*60}")
         print(f"Starting training for {num_epochs} epochs")
@@ -127,7 +123,7 @@ class Trainer:
         
         return self.history
     
-    def plot_training_history(self, save_path=None, show=True):
+    def plot_training_history(self, save_folder, show=True):
         """
         Plot training loss curve.
         
@@ -137,11 +133,8 @@ class Trainer:
         """
         import matplotlib.pyplot as plt
         
-        if save_path is None:
-            save_path = config.RUN_FOLDER / "training_loss.png"
-        
         # Create directory if it doesn't exist
-        save_path.parent.mkdir(parents=True, exist_ok=True)
+        save_folder.mkdir(parents=True, exist_ok=True)
         
         epochs = range(1, len(self.history['train_loss']) + 1)
         
@@ -160,6 +153,7 @@ class Trainer:
         plt.tight_layout()
         
         # Save
+        save_path = save_folder / "training_loss.png"
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         print(f"Training loss plot saved to: {save_path}")
         

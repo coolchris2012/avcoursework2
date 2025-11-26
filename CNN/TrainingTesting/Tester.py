@@ -207,7 +207,7 @@ class Tester:
 
 
     
-    def plot_confusion_matrix(self, save_path=None, show=True):
+    def plot_confusion_matrix(self, save_path, show=True):
         """
         Plot confusion matrix as a simple grid.
         
@@ -216,9 +216,6 @@ class Tester:
             show: Whether to display the plot
         """
         import matplotlib.pyplot as plt
-        
-        if save_path is None:
-            save_path = config.RUN_FOLDER / "confusion_matrix.png"
         
         # Create directory if it doesn't exist
         save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -259,7 +256,7 @@ class Tester:
             plt.show()
         plt.close()
     
-    def plot_per_class_accuracy(self, save_path=None, show=True):
+    def plot_per_class_accuracy(self, save_path, show=True):
         """
         Plot per-class accuracy as a simple bar chart.
         
@@ -269,8 +266,6 @@ class Tester:
         """
         import matplotlib.pyplot as plt
         
-        if save_path is None:
-            save_path = config.RUN_FOLDER / "per_class_accuracy.png"
         
         # Create directory if it doesn't exist
         save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -300,7 +295,7 @@ class Tester:
             plt.show()
         plt.close()
     
-    def plot_all_metrics(self, save_dir=None, show=False):
+    def plot_all_metrics(self, save_dir, show=False):
         """
         Generate all visualization plots.
         
@@ -308,8 +303,6 @@ class Tester:
             save_dir: Directory to save plots (default: RUN_FOLDER)
             show: Whether to display the plots
         """
-        if save_dir is None:
-            save_dir = config.RUN_FOLDER
         
         print(f"\nGenerating visualization plots...")
         

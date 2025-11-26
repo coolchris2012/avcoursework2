@@ -31,6 +31,7 @@ LR_SCHEDULER_PARAMS: dict = {  # type: ignore
 }
 
 # Paths
+Visual_MFFCs_DIR = Path("Visual_Features_Mock")  # Directory containing visual feature .npy files
 MFCC_DIR = Path("MFCCs_06")  # Directory containing MFCC .npy files
 
 # Noise settings
@@ -40,8 +41,14 @@ SNR_DB = 10  # Signal-to-noise ratio in dB (used when ADD_NOISE=True)
 # Model saving - Create timestamped folder for each run
 from datetime import datetime
 RUN_TIMESTAMP = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-RUN_FOLDER = Path("CNN/Models") / RUN_TIMESTAMP
-MODEL_SAVE_PATH = RUN_FOLDER / "best_model.pth"
+# Separate folders for different modalities
+AUDIO_SAVE_FOLDER = Path("CNN/TrainedModels/Audio") / RUN_TIMESTAMP
+VISUAL_SAVE_FOLDER = Path("CNN/TrainedModels/Visual") / RUN_TIMESTAMP
+EARLY_FUSION_SAVE_FOLDER = Path("CNN/TrainedModels/EarlyFusion") / RUN_TIMESTAMP
+# Model save paths
+AUDIO_SAVE_PATH = AUDIO_SAVE_FOLDER / "best_model.pth"
+VISUAL_SAVE_PATH = VISUAL_SAVE_FOLDER / "best_model.pth"
+EARLY_FUSION_SAVE_PATH = EARLY_FUSION_SAVE_FOLDER / "best_model.pth"
 
 # Transformations (currently None for MFCCs, could add augmentation later)
 TRAIN_TRANSFORMATION = None
