@@ -1,3 +1,4 @@
-from CNN.Dataset.BaseDataset import *
-from CNN.Dataset.AudioDataset import *
-from CNN.Dataset.VisualDataset import *
+from .BaseDataset import *
+from .AudioDataset import *
+from .VisualDataset import *
+from .AudioVisualDataset import *

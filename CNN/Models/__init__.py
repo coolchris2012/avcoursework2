@@ -1,1 +1,1 @@
-from CNN.Models.ModelArchitecture import *
+from .ModelArchitecture import *

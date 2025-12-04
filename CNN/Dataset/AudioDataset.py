@@ -11,7 +11,7 @@ class AudioDataset(BaseDataset):
     """
     
     def __init__(self, data_dir: Path, transform=None) -> None:
-        super().__init__(data_dir, transform)
+        super().__init__(data_dir, transform=transform) 
         
         # Load all .npy MFCC files
         self.paths = sorted(list(Path(data_dir).glob("*.npy")))
@@ -32,15 +32,16 @@ class AudioDataset(BaseDataset):
         Unique __getitem__ for AudioDataset as it includes adding noise.
 
         Returns:
-            mfcc: Tensor of shape (1, num_frames, 12)
+            mfcc: Tensor of shape (1, num_frames, 13)
             label_idx: Integer class index
         """
-        # Load MFCC from .npy file
+        # Load MFCC from .npy file and preprocess into correct shape
         mfcc_path = self.paths[index]
-        mfcc = np.load(mfcc_path).astype(np.float32)  # (num_frames, 12)
+        mfcc = np.load(mfcc_path).astype(np.float32)  # (num_frames, 13, 1)
+        mfcc = np.squeeze(mfcc, axis=-1) # Remove channel dimension from librosa
         
-        # Convert to tensor and add channel dimension: (num_frames, 12) -> (1, num_frames, 12)
-        mfcc = torch.from_numpy(mfcc).unsqueeze(0)  # (1, num_frames, 12)
+        # Convert to tensor and add channel dimension: (num_frames, 13) -> (1, num_frames, 13)
+        mfcc = torch.from_numpy(mfcc).unsqueeze(0)  # (1, num_frames, 13)
         
         # Add noise if enabled in config
         if config.ADD_NOISE:
@@ -61,7 +62,7 @@ class AudioDataset(BaseDataset):
         Add Gaussian noise to MFCC at specified SNR.
         
         Args:
-            mfcc: MFCC tensor of shape (1, num_frames, 12)
+            mfcc: MFCC tensor of shape (1, num_frames, 13)
             snr_db: Signal-to-noise ratio in dB
         
         Returns:

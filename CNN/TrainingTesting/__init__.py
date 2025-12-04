@@ -1,2 +1,2 @@
-from CNN.TrainingTesting.Trainer import *
-from CNN.TrainingTesting.Tester import *
+from .Trainer import *
+from .Tester import *

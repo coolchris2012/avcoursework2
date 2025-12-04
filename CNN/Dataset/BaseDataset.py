@@ -13,9 +13,14 @@ class BaseDataset(Dataset):
         paths: List of file paths to dataset samples
     """
     
-    def __init__(self, data_dir: Path, transform=None) -> None:
+    def __init__(self, *data_dirs: Path, transform=None) -> None:
         super().__init__()
-        self.data_dir = data_dir
+        # Store single directory for backwards compatibility with AudioDataset/VisualDataset
+        if len(data_dirs) == 1:
+            self.data_dir = data_dirs[0]
+        else:
+            # For AudioVisualDataset or other multi-directory datasets
+            self.data_dirs = data_dirs
         self.transform = transform
         self.paths: list[Path] = []  # each dataset will fill
 
@@ -101,8 +106,7 @@ class BaseDataset(Dataset):
     @classmethod
     def from_split(
                     cls,
-                    data_dir: Path,
-                    *args, # <-------------------- Placeholder for any additional arguments
+                    *data_dirs, # <-------------------- Accept any number of directories
                     train_transform=config.TRAIN_TRANSFORMATION,
                     test_transform=config.TEST_TRANSFORMATION,
                     split_ratio: float = config.TRAIN_SPLIT_RATIO,
@@ -111,7 +115,7 @@ class BaseDataset(Dataset):
                   ):
 
         # 1) Create a temporary "full" dataset
-        full_dataset = cls(data_dir, *args, **kwargs)
+        full_dataset = cls(*data_dirs, **kwargs)
         all_paths = full_dataset.paths 
 
         if len(all_paths) == 0:
@@ -126,11 +130,11 @@ class BaseDataset(Dataset):
         )
 
         # 3) Create train dataset
-        train_ds = cls(data_dir, *args, transform=train_transform, **kwargs)
+        train_ds = cls(*data_dirs, transform=train_transform, **kwargs)
         train_ds.paths = train_paths  # override with the split
 
         # 4) Create test dataset
-        test_ds  = cls(data_dir, *args, transform=test_transform, **kwargs)
+        test_ds  = cls(*data_dirs, transform=test_transform, **kwargs)
         test_ds.paths = test_paths
 
         return train_ds, test_ds

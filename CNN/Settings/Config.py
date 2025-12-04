@@ -1,4 +1,4 @@
-from CNN.Settings.CNNImports import *
+from .CNNImports import *
 
 # Model settings
 HIDDEN_UNITS = 32
@@ -31,8 +31,8 @@ LR_SCHEDULER_PARAMS: dict = {  # type: ignore
 }
 
 # Paths
-Visual_MFFCs_DIR = Path("Visual_Features_Mock")  # Directory containing visual feature .npy files
-MFCC_DIR = Path("MFCCs_06")  # Directory containing MFCC .npy files
+VISUAL_FEATURES_DIR = Path("Visual_Features_00")  # Directory containing visual feature .npy files
+MFCC_DIR = Path("MFCCs_00")  # Directory containing MFCC .npy files
 
 # Noise settings
 ADD_NOISE = False  

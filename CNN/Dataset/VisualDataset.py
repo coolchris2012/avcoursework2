@@ -11,7 +11,7 @@ class VisualDataset(BaseDataset):
     """
     
     def __init__(self, data_dir: Path, transform=None) -> None:
-        super().__init__(data_dir, transform)
+        super().__init__(data_dir, transform=transform)
         
         # Load all .npy visual feature files
         self.paths = sorted(list(Path(data_dir).glob("*.npy")))
@@ -35,13 +35,18 @@ class VisualDataset(BaseDataset):
             visual: Tensor of shape (1, num_frames, num_features)
             label_idx: Integer class index
         """
-        # Load visual features from .npy file
+        # Load visual features from .npy file and preprocess into correct shape
         visual_path = self.paths[index]
-        visual = np.load(visual_path).astype(np.float32)  # (num_frames, num_features)
+        visual = np.load(visual_path).astype(np.float32)  # (height=60, width=66, frames=200)
+        visual = visual.transpose(2, 0, 1)  # Transpose: (height, width, frames) -> (frames, height, width)
+        visual = self._average_pool_2d(visual, pool_size=2) # Apply 2x2 average pooling (200, 60, 66) -> (200, 30, 33)
         
-        # Convert to tensor and add channel dimension: (num_frames, N) -> (1, num_frames, N)
-        visual = torch.from_numpy(visual).unsqueeze(0)
+        num_frames = visual.shape[0] # Flatten spatial dimensions: (200, 30, 33) -> (200, 990)
+        visual = visual.reshape(num_frames, -1)
+        visual = torch.from_numpy(visual).unsqueeze(0) # Convert to tensor AND add channel dimension: (200, 990) -> (1, 200, 990)
         
+
+
         # Apply transforms if any (e.g., normalization, augmentation)
         if self.transform:
             visual = self.transform(visual)
@@ -51,3 +56,25 @@ class VisualDataset(BaseDataset):
         label_idx = self.class_to_idx[label_name]
         
         return visual, label_idx
+    
+    def _average_pool_2d(self, data, pool_size=2):
+        """
+        Apply 2D average pooling to reduce spatial dimensions like how CNNs do it.
+        
+        Args:
+            data: numpy array of shape (frames, height, width)
+            pool_size: size of pooling window (default: 2 for 2x2 pooling)
+        
+        Returns:
+            Pooled array of shape (frames, height//pool_size, width//pool_size)
+        """
+        num_frames, height, width = data.shape
+        new_height = height // pool_size
+        new_width = width // pool_size
+        
+        # Reshape and average
+        pooled = data[:, :new_height*pool_size, :new_width*pool_size]
+        pooled = pooled.reshape(num_frames, new_height, pool_size, new_width, pool_size)
+        pooled = pooled.mean(axis=(2, 4))  # Average over pool_size dimensions
+        
+        return pooled
