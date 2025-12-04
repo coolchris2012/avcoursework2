@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-def main(path_to_video, filename, folderName):
+def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", folderName = "Visual_Features_Edge_Detection", edge_detection = True):
   # models' settings. XML files are located in the same directory as the script.
   face_detector = cv.CascadeClassifier("detectors/haarcascade_frontalface_default.xml")
   mouth_detector = cv.CascadeClassifier("detectors/haarcascade_smile.xml")
@@ -15,7 +15,7 @@ def main(path_to_video, filename, folderName):
   new_image_width = 640   # downsample the image
 
   frame_count = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
-  features = np.empty((frame_count, 66, 200))
+  features = np.empty((frame_count, 100, 200))
 
   # run continuously
   while cap.isOpened():
@@ -56,12 +56,12 @@ def main(path_to_video, filename, folderName):
 
         if len(smile_bboxes) > 0:
           for (smile_x1, smile_y1, smile_width, smile_height) in smile_bboxes:
-            smile_RoI = face_RoI[face_RoI_bttm_limit + smile_y1:face_RoI_bttm_limit + smile_y1 + int(smile_width/3), smile_x1:smile_x1 + smile_width]
+            smile_RoI = face_RoI[face_RoI_bttm_limit + smile_y1:face_RoI_bttm_limit + smile_y1 + int(smile_width/2), smile_x1:smile_x1 + smile_width]
 
             smile_RoI = cv.cvtColor(smile_RoI, cv.COLOR_BGR2GRAY)
             
             new_smile_width = 200
-            new_smile_height = int(new_smile_width/3)
+            new_smile_height = int(new_smile_width/2)
 
             smile_RoI_resized = cv.resize(smile_RoI, (new_smile_width, new_smile_height))
 
@@ -74,12 +74,27 @@ def main(path_to_video, filename, folderName):
             
             smile_RoI_resized_new = cv.idct(smile_RoI_dct_trunc)
 
-            features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = smile_RoI_resized_new
 
-  #   cv.imshow("frm_resized", frm_resized)
-  #   key = cv.waitKey(sleep)
-  #   if key == ord("q"):
-  #     break
+            if (edge_detection):
+              smile_RoI_resized_blurred = cv.GaussianBlur(smile_RoI_resized_new, (3, 3), 0)
+              
+              sobelx = cv.Sobel(smile_RoI_resized_blurred, cv.CV_64F, 1, 0, ksize=3)
+              sobely = cv.Sobel(smile_RoI_resized_blurred, cv.CV_64F, 0, 1, ksize=3)
+
+              gradient_magnitude = cv.magnitude(sobelx, sobely)
+              converted_gradient_magnitude = cv.convertScaleAbs(gradient_magnitude)
+
+              smile_RoI_resized_final = cv.threshold(converted_gradient_magnitude, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
+
+            else:
+              smile_RoI_resized_final = smile_RoI_resized_new
+
+            features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = smile_RoI_resized_final
+
+    # cv.imshow("frm_resized", smile_RoI_resized_final)
+    # key = cv.waitKey(sleep)
+    # if key == ord("q"):
+    #   break
 
   # cv.destroyAllWindows()
 
@@ -92,3 +107,4 @@ def main(path_to_video, filename, folderName):
   np.save(folderName + "/" + filename + ".npy", features)
   
 
+# main()
