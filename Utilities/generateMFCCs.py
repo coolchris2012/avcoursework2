@@ -7,9 +7,13 @@ import soundfile as sf
 directory = Path("Raw_Clips/audio")
 files = directory.glob("*.wav")
 for filename in files:
+<<<<<<< HEAD
   signal, sampleRate = sf.read("Raw_Clips/audio/" + filename.name, dtype='float32')
   # Convert stereo to mono if needed
   if signal.ndim == 2:
     signal = signal.mean(axis=1)
+=======
+  signal, sampleRate = sf.read("../Raw_Clips/audio/" + filename.name, dtype='float32')
+>>>>>>> 46283225b156628c8b04736dfa43d51f9cea070e
   name = filename.name.replace(".wav", "")
   featureExtraction.main(signal, sampleRate, name, "MFCCs_00") # Manually iterate per run
