@@ -37,8 +37,8 @@ class AudioDataset(BaseDataset):
         """
         # Load MFCC from .npy file and preprocess into correct shape
         mfcc_path = self.paths[index]
-        mfcc = np.load(mfcc_path).astype(np.float32)  # (num_frames, 13, 1)
-        mfcc = np.squeeze(mfcc, axis=-1) # Remove channel dimension from librosa
+        mfcc = np.load(mfcc_path).astype(np.float32)  # (13, num_frames) from librosa
+        mfcc = mfcc.T  # Transpose to (num_frames, 13)
         
         # Convert to tensor and add channel dimension: (num_frames, 13) -> (1, num_frames, 13)
         mfcc = torch.from_numpy(mfcc).unsqueeze(0)  # (1, num_frames, 13)

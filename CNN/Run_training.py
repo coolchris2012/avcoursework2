@@ -1,3 +1,14 @@
+import os
+import sys
+from pathlib import Path
+
+
+# Set working directory to project root (AVCoursework2/)
+script_dir = Path(__file__).resolve().parent  # CNN/
+project_root = script_dir.parent  # AVCoursework2/
+os.chdir(project_root)
+sys.path.insert(0, str(project_root))
+
 # Import others after path setup
 from CNN.Settings import *
 from CNN.Dataset import *
@@ -103,10 +114,6 @@ def train_model(modality: str, audio_dir: Path | None = None, visual_dir: Path |
         hidden_units=config.HIDDEN_UNITS
     ).to(device)
     
-    # Count parameters
-    total_params = sum(p.numel() for p in model.parameters())
-    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    
     # Create trainer and start training
     trainer = Trainer(
         model=model,
@@ -174,16 +181,11 @@ def train_model(modality: str, audio_dir: Path | None = None, visual_dir: Path |
 
 # Run the main function
 if __name__ == "__main__":
-    # Set working directory to project root (AVCoursework2/)
-    script_dir = Path(__file__).resolve().parent  # CNN/
-    project_root = script_dir.parent  # AVCoursework2/
-    os.chdir(project_root)
-    sys.path.insert(0, str(project_root))
 
     print(f"Working directory: {os.getcwd()}\n")
     
     train_model(
-        modality="audio",
+        modality="visual",
         audio_dir=config.MFCC_DIR,
         visual_dir=config.VISUAL_FEATURES_DIR,
     )
