@@ -185,7 +185,7 @@ if __name__ == "__main__":
     print(f"Working directory: {os.getcwd()}\n")
     
     train_model(
-        modality="visual",
+        modality="early_fusion",
         audio_dir=config.MFCC_DIR,
         visual_dir=config.VISUAL_FEATURES_DIR,
     ) 

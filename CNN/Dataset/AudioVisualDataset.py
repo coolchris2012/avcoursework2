@@ -87,15 +87,28 @@ class AudioVisualDataset(BaseDataset):
         return pooled
     
     def _process_visual(self, visual, target_frames):
-        """Process visual: transpose, pool, flatten, upsample to audio rate
-        Input: (60, 66, 200)
-        Output: (target_frames, 990)
+        """Process visual: transpose, crop/pad to fixed size, flatten, upsample to audio rate
+        Input: (varying_frames, 66, 200)
+        Output: (target_frames, fixed_features)
         """
         # Transpose to (frames, height, width)
-        visual = visual.transpose(2, 0, 1)  # (200, 60, 66)
+        visual = visual.transpose(2, 0, 1)  # (200, height, width)
         
-        # Apply 2x2 average pooling
-        visual = self._average_pool_2d(visual, pool_size=2)  # (200, 30, 33)
+        # Crop or pad to fixed spatial size (30x33)
+        # DCT concentrates energy in top-left, so we take the most important coefficients
+        height, width = visual.shape[1], visual.shape[2]
+        
+        if height >= 30 and width >= 33:
+            # Normal case: crop to 30x33
+            visual = visual[:, :30, :33]
+        else:
+            # Edge case: pad with zeros if too small
+            target_h, target_w = 30, 33
+            padded = np.zeros((visual.shape[0], target_h, target_w), dtype=visual.dtype)
+            h_size = min(height, target_h)
+            w_size = min(width, target_w)
+            padded[:, :h_size, :w_size] = visual[:, :h_size, :w_size]
+            visual = padded
         
         # Flatten spatial dimensions
         num_frames = visual.shape[0]
@@ -127,10 +140,10 @@ class AudioVisualDataset(BaseDataset):
         """
         # Load audio features
         audio_path = self.paths[index]
-        audio = np.load(audio_path).astype(np.float32)  # (N, 13, 1)
+        audio = np.load(audio_path).astype(np.float32)  # (13, N) from librosa
         
-        # Remove channel dimension
-        audio = np.squeeze(audio, axis=-1) if audio.ndim == 3 else audio  # (N, 13)
+        # Transpose to (N, 13)
+        audio = audio.T  # (N, 13)
         
         # Load visual features
         visual_path = self.visual_dir / audio_path.name
