@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import sklearn.decomposition
 
-def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", folderName = "Visual_Features_Edge_Detection", edge_detection = True):
-  # models' settings. XML files are located in the same directory as the script.
+def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", folderName = "Visual_Features_Edge_Detection", edge_detection = True, PCA = True, shape = True):
+  # models' settings
   face_detector = cv.CascadeClassifier("detectors/haarcascade_frontalface_default.xml")
   mouth_detector = cv.CascadeClassifier("detectors/haarcascade_smile.xml")
 
@@ -18,7 +18,15 @@ def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", 
   frame_count = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
   final_smile_width = 100
   final_smile_height = int(final_smile_width/2)
-  features = np.empty((frame_count, 50, 10))
+  if shape and PCA:
+    features = np.empty((frame_count, 50*10 + 2))
+  elif shape:
+    features = np.empty((frame_count, 2))
+  elif PCA:
+    features = np.empty((frame_count, 50, 10))
+  else:
+    print("No features selected")
+    return
 
   # run continuously
   while cap.isOpened():
@@ -78,8 +86,16 @@ def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", 
             pca = sklearn.decomposition.PCA(n_components=10)
             pca.fit(smile_RoI_resized_final)
             pca = pca.transform(smile_RoI_resized_final)
-
-            features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = pca
+            
+            #both shape and PCA
+            if shape and PCA: 
+              features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = np.concatenate((pca.flatten(), [smile_height, smile_width]))
+            #just shape
+            elif shape:
+              features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = [smile_height, smile_width]
+            #just PCA
+            else: 
+              features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = pca
 
     # cv.imshow("frm_resized", smile_RoI_resized_final)
     # key = cv.waitKey(sleep)
