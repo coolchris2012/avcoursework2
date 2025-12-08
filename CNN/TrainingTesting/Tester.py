@@ -166,7 +166,8 @@ class Tester:
         print(f"\n{'='*60}")
         print(f"Confusion Matrix")
         print(f"{'='*60}")
-        print(f"{'True \\ Pred':<15}", end="")
+        header = "True \\ Pred"
+        print(f"{header:<15}", end="")
         
         # Print column headers (abbreviated)
         for name in self.class_names:
