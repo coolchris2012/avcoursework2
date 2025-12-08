@@ -127,6 +127,32 @@ class AudioVisualDataset(BaseDataset):
         
         return visual_upsampled
     
+    def _add_noise(self, audio: torch.Tensor, snr_db: float) -> torch.Tensor:
+        """
+        Add Gaussian noise to audio at specified SNR.
+        
+        Args:
+            audio: Audio tensor of shape (1, num_frames, 13)
+            snr_db: Signal-to-noise ratio in dB
+        
+        Returns:
+            Noisy audio tensor
+        """
+        # Calculate signal power
+        signal_power = torch.mean(audio ** 2)
+        
+        # Calculate noise power needed for target SNR
+        snr_linear = 10 ** (snr_db / 10)
+        noise_power = signal_power / snr_linear
+        
+        # Generate Gaussian noise with calculated power
+        noise = torch.randn_like(audio) * torch.sqrt(noise_power)
+        
+        # Add noise to signal
+        noisy_audio = audio + noise
+        
+        return noisy_audio
+    
     def __len__(self):
         return len(self.paths)
     
@@ -144,6 +170,16 @@ class AudioVisualDataset(BaseDataset):
         
         # Transpose to (N, 13)
         audio = audio.T  # (N, 13)
+        
+        # Convert to tensor and add channel dimension for noise addition: (N, 13) -> (1, N, 13)
+        audio = torch.from_numpy(audio).unsqueeze(0)
+        
+        # Add noise if enabled in config
+        if config.ADD_NOISE:
+            audio = self._add_noise(audio, config.SNR_DB)
+        
+        # Convert back to numpy for concatenation
+        audio = audio.squeeze(0).numpy()  # (N, 13)
         
         # Load visual features
         visual_path = self.visual_dir / audio_path.name

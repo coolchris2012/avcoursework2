@@ -72,8 +72,6 @@ class AudioDataset(BaseDataset):
         signal_power = torch.mean(mfcc ** 2)
         
         # Calculate noise power needed for target SNR
-        # SNR_dB = 10 * log10(signal_power / noise_power)
-        # noise_power = signal_power / (10 ^ (SNR_dB / 10))
         snr_linear = 10 ** (snr_db / 10)
         noise_power = signal_power / snr_linear
         
