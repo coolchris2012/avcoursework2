@@ -35,8 +35,11 @@ def train_model(modality: str, audio_dir: Path | None = None, visual_dir: Path |
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     print(f"Training modality: {modality.upper()}\n")
+
+
+
     
-    # Select dataset and save paths based on modality
+    # ================================== SELECT DATASET BASED ON MODALITY ==================================
 
     # TRAINING AUDIO MODEL ONLY
     if modality == 'audio':
@@ -97,7 +100,10 @@ def train_model(modality: str, audio_dir: Path | None = None, visual_dir: Path |
     
 
 
-    # ================================== TRAINING PROCESS ==================================
+
+
+    # ================================== MODEL INITIALISATION ==================================
+    
 
     print(f"Train set: {len(train_dataset)} samples")
     print(f"Test set: {len(test_dataset)} samples")
@@ -113,6 +119,12 @@ def train_model(modality: str, audio_dir: Path | None = None, visual_dir: Path |
         num_classes=config.NUM_CLASSES,
         hidden_units=config.HIDDEN_UNITS
     ).to(device)
+
+
+
+
+
+    # ================================== TRAINING PROCESS ==================================
     
     # Create trainer and start training
     trainer = Trainer(
@@ -137,6 +149,13 @@ def train_model(modality: str, audio_dir: Path | None = None, visual_dir: Path |
             'idx_to_class': {v: k for k, v in train_dataset.class_to_idx.items()}
         }, f, indent=2)
     print(f"Class mappings saved to: {class_mapping_path}")
+
+
+
+
+
+
+    # ================================== TESTING PROCESS ==================================
     
     # Load best model for testing
     print(f"\nLoading best model for evaluation...")
@@ -144,33 +163,50 @@ def train_model(modality: str, audio_dir: Path | None = None, visual_dir: Path |
     model.load_state_dict(checkpoint['model_state_dict'])
     print(f"Best model loaded from epoch {checkpoint['epoch']+1}")
     
-    # Test the model
-    tester = Tester(
-        model=model,
-        test_loader=test_loader,
-        device=device,
-        class_names=train_dataset.classes
-    )
+    # Determine SNR levels to test
+    if modality in ['audio', 'early_fusion']:
+        snr_levels = [(None, "CleanTest"), (20, "NoisyTest_20dB"), (10, "NoisyTest_10dB"), 
+                      (0, "NoisyTest_0dB"), (-5, "NoisyTest_-5dB")]
+    else:  # visual - no noise needed
+        snr_levels = [(None, "")]
     
-    # Evaluate and print results
-    results = tester.evaluate()
-    tester.print_results(results)
-    tester.print_per_class_accuracy()
-    
-    # Save test results summary
-    results_path = save_folder / "test_summary.json"
-    with open(results_path, 'w') as f:
-        json.dump({
-            'modality': modality,
-            'test_loss': results['test_loss'],
-            'accuracy': results['accuracy'],
-            'correct': results['correct'],
-            'total': results['total']
-        }, f, indent=2)
-    print(f"Test summary saved to: {results_path}")
-    
-    # Generate visualization plots (confusion matrix + per-class accuracy)
-    tester.plot_all_metrics(save_dir=save_folder, show=False)
+    for snr_db, folder_name in snr_levels:
+        # Set up noise for this test
+        config.ADD_NOISE = snr_db is not None
+        if snr_db is not None:
+            config.SNR_DB = snr_db
+        
+        # Create results folder
+        test_folder = save_folder / folder_name if folder_name else save_folder
+        test_folder.mkdir(parents=True, exist_ok=True)
+        
+        print(f"\nTesting at: {'CLEAN' if snr_db is None else f'{snr_db}dB SNR'}")
+        
+        # Reload dataset with current noise settings
+        if modality == 'audio':
+            _, test_dataset = AudioDataset.from_split(audio_dir or config.MFCC_DIR, 
+                test_transform=config.TEST_TRANSFORMATION, split_ratio=config.TRAIN_SPLIT_RATIO, seed=config.RANDOM_SEED)
+        elif modality == 'visual':
+            _, test_dataset = VisualDataset.from_split(visual_dir or config.VISUAL_FEATURES_DIR,
+                test_transform=config.TEST_TRANSFORMATION, split_ratio=config.TRAIN_SPLIT_RATIO, seed=config.RANDOM_SEED)
+        elif modality == 'early_fusion':
+            _, test_dataset = AudioVisualDataset.from_split(audio_dir or config.MFCC_DIR, visual_dir or config.VISUAL_FEATURES_DIR,
+                test_transform=config.TEST_TRANSFORMATION, split_ratio=config.TRAIN_SPLIT_RATIO, seed=config.RANDOM_SEED)
+        
+        test_loader = DataLoader(test_dataset, batch_size=config.BATCH_SIZE, shuffle=False, 
+                                 num_workers=config.NUM_WORKERS, collate_fn=test_dataset.collate_fn)
+        
+        # Test and save results
+        tester = Tester(model, test_loader, device, test_dataset.classes)
+        results = tester.evaluate()
+        tester.print_results(results)
+        tester.print_per_class_accuracy()
+        
+        with open(test_folder / "test_summary.json", 'w') as f:
+            json.dump({'modality': modality, 'snr_db': snr_db, 'test_loss': results['test_loss'],
+                      'accuracy': results['accuracy'], 'correct': results['correct'], 'total': results['total']}, f, indent=2)
+        
+        tester.plot_all_metrics(save_dir=test_folder, show=False)
     
     print(f"\n{'='*60}")
     print(f"Training complete for {modality.upper()} model!")

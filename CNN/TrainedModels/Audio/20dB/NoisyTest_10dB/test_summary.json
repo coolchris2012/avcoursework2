@@ -1,0 +1,8 @@
+{
+  "modality": "audio",
+  "snr_db": 10,
+  "test_loss": 2.966188299655914,
+  "accuracy": 61.875,
+  "correct": 99,
+  "total": 160
+}

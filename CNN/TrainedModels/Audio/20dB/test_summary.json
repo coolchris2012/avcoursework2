@@ -1,7 +1,0 @@
-{
-  "modality": "audio",
-  "test_loss": 0.0024748980555159505,
-  "accuracy": 100.0,
-  "correct": 160,
-  "total": 160
-}

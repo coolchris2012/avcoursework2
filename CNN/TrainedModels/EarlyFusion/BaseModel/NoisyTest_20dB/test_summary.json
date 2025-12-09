@@ -1,0 +1,8 @@
+{
+  "modality": "early_fusion",
+  "snr_db": 20,
+  "test_loss": 0.7169028103351593,
+  "accuracy": 80.0,
+  "correct": 128,
+  "total": 160
+}
