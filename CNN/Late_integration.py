@@ -16,6 +16,7 @@ sys.path.insert(0, str(project_root))
 # Import others after path setup
 import torch
 import numpy as np
+import json
 from torch.utils.data import DataLoader
 from CNN.Settings import config
 from CNN.Dataset import *
@@ -189,31 +190,34 @@ def test_late_fusion_at_snr_levels():
             'labels': labels
         }
         
-        print(f"Accuracy: {accuracy:.4f}")
+        print(f"Accuracy: {accuracy*100:.2f}%")
         
         # Restore config
         config.ADD_NOISE = original_add_noise
         config.SNR_DB = original_snr
         
-        # Save results
+        # Save results using Tester methods
         output_dir = Path("CNN/TrainedModels/LateFusion") / folder_name
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        np.save(output_dir / "predictions.npy", predictions)
-        np.save(output_dir / "labels.npy", labels)
+        # Create Tester instance to use its plotting and saving methods
+        test_tester = Tester(None, None, None, audio_test_dataset.classes)
+        test_tester.all_predictions = predictions.tolist()
+        test_tester.all_labels = labels.tolist()
         
-        # Create a dummy Tester instance to use its plotting methods
-        dummy_tester = Tester(None, None, None, audio_test_dataset.classes)
-        dummy_tester.all_predictions = predictions.tolist()
-        dummy_tester.all_labels = labels.tolist()
-        dummy_tester.plot_confusion_matrix(output_dir / "confusion_matrix.png", show=False)
-        dummy_tester.plot_per_class_accuracy(output_dir / "per_class_accuracy.png", show=False)
+        # Save test summary JSON (matching format from Run_training.py)
+        with open(output_dir / "test_summary.json", 'w') as f:
+            json.dump({
+                'modality': 'late_fusion',
+                'snr_db': snr_db,
+                'test_loss': 0.0,  # Not applicable for late fusion
+                'accuracy': accuracy * 100,
+                'correct': int((predictions == labels).sum()),
+                'total': len(labels)
+            }, f, indent=2)
         
-        with open(output_dir / "results.txt", 'w') as f:
-            f.write(f"Late Fusion Testing Results\n")
-            f.write(f"SNR: {snr_db if snr_db is not None else 'Clean'}\n")
-            f.write(f"Accuracy: {accuracy:.4f}\n")
-            f.write(f"Fusion Method: Average\n")
+        # Generate and save all plots (confusion matrix, per-class accuracy)
+        test_tester.plot_all_metrics(save_dir=output_dir, show=False)
         
         print(f"Results saved to {output_dir}")
     
@@ -222,7 +226,7 @@ def test_late_fusion_at_snr_levels():
     print("Late Fusion Summary")
     print(f"{'='*60}")
     for folder_name, result in results.items():
-        print(f"{folder_name}: {result['accuracy']:.4f}")
+        print(f"{folder_name}: {result['accuracy']*100:.2f}%")
 
 
 if __name__ == "__main__":

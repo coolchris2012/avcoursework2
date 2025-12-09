@@ -1,0 +1,8 @@
+{
+  "modality": "late_fusion",
+  "snr_db": 0,
+  "test_loss": 0.0,
+  "accuracy": 18.625,
+  "correct": 149,
+  "total": 800
+}

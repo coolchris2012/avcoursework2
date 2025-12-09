@@ -1,4 +1,0 @@
-Late Fusion Testing Results
-SNR: 0
-Accuracy: 0.1663
-Fusion Method: Average
