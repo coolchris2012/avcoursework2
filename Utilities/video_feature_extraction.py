@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import sklearn.decomposition
 
-def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", folderName = "Visual_Features_Edge_Detection", edge_detection = True, PCA = True, shape = True):
+def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", folderName = "Visual_Features_Edge_Detection", PCA = False, shape = False, edge_detection = True):
   # models' settings
   face_detector = cv.CascadeClassifier("detectors/haarcascade_frontalface_default.xml")
   mouth_detector = cv.CascadeClassifier("detectors/haarcascade_smile.xml")
@@ -20,10 +20,12 @@ def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", 
   final_smile_height = int(final_smile_width/2)
   if shape and PCA:
     features = np.empty((frame_count, 50*10 + 2))
-  elif shape:
+  elif shape and not edge_detection:
     features = np.empty((frame_count, 2))
-  elif PCA:
+  elif PCA and not edge_detection:
     features = np.empty((frame_count, 50, 10))
+  elif edge_detection and not (shape or PCA):
+    features = []
   else:
     print("No features selected")
     return
@@ -78,31 +80,35 @@ def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", 
               gradient_magnitude = cv.magnitude(sobelx, sobely)
               converted_gradient_magnitude = cv.convertScaleAbs(gradient_magnitude)
 
-              smile_RoI_resized_final = cv.threshold(converted_gradient_magnitude, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
+              smile_RoI_resized_binary = cv.threshold(converted_gradient_magnitude, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
+
+              final_feature_data, _ = cv.findContours(smile_RoI_resized_binary, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
 
             else:
-              smile_RoI_resized_final = smile_RoI_resized_new
+              final_feature_data = smile_RoI_resized_new
+              pca = sklearn.decomposition.PCA(n_components=10)
+              pca.fit(final_feature_data)
+              final_feature_data = pca.transform(final_feature_data)
 
-            pca = sklearn.decomposition.PCA(n_components=10)
-            pca.fit(smile_RoI_resized_final)
-            pca = pca.transform(smile_RoI_resized_final)
-            
-            #both shape and PCA
-            if shape and PCA: 
-              features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = np.concatenate((pca.flatten(), [smile_height, smile_width]))
-            #just shape
+            if shape and PCA:
+              features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = np.concatenate((final_feature_data.flatten(), [smile_height, smile_width]))
             elif shape:
               features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = [smile_height, smile_width]
-            #just PCA
-            else: 
-              features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = pca
+            elif PCA:
+              features[int(cap.get(cv.CAP_PROP_POS_FRAMES)-1)] = final_feature_data
+            elif edge_detection:
+              features.append(final_feature_data)
 
-    # cv.imshow("frm_resized", smile_RoI_resized_final)
-    # key = cv.waitKey(sleep)
-    # if key == ord("q"):
-    #   break
+  #   cv.imshow("frm_resized", smile_RoI_resized_final)
+  #   key = cv.waitKey(sleep)
+  #   if key == ord("q"):
+  #     break
 
   # cv.destroyAllWindows()
+
+  if edge_detection:
+    features = np.array(features, dtype=object)
 
   try:
     Path(folderName).mkdir()
