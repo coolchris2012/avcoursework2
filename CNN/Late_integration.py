@@ -57,15 +57,14 @@ class LateFusionTester:
         print(f"Loaded audio model from {audio_model_path}")
         print(f"Loaded visual model from {visual_model_path}")
     
-    def test(self, audio_dataset, visual_dataset, batch_size=32, fusion_method='average'):
+    def test(self, audio_dataset, visual_dataset, batch_size=32):
         """
-        Test late fusion on datasets
+        Test late fusion on datasets using probability averaging.
         
         Args:
             audio_dataset: AudioDataset for testing
             visual_dataset: VisualDataset for testing (must be same samples as audio)
             batch_size: Batch size for testing
-            fusion_method: 'average' (probability averaging) or 'voting' (hard voting)
         
         Returns:
             accuracy, all_predictions, all_labels
@@ -104,19 +103,9 @@ class LateFusionTester:
         all_visual_probs = torch.cat(all_visual_probs, dim=0)
         all_labels = torch.cat(all_labels, dim=0)
         
-        # Fusion
-        if fusion_method == 'average':
-            # Average probability fusion
-            fused_probs = (all_audio_probs + all_visual_probs) / 2.0
-            predictions = torch.argmax(fused_probs, dim=1)
-        elif fusion_method == 'voting':
-            # Hard voting
-            audio_preds = torch.argmax(all_audio_probs, dim=1)
-            visual_preds = torch.argmax(all_visual_probs, dim=1)
-            # If they agree, use that; if not, use audio (or could use visual)
-            predictions = torch.where(audio_preds == visual_preds, audio_preds, audio_preds)
-        else:
-            raise ValueError(f"Unknown fusion method: {fusion_method}")
+        # Average probability fusion
+        fused_probs = (all_audio_probs + all_visual_probs) / 2.0
+        predictions = torch.argmax(fused_probs, dim=1)
         
         # Calculate accuracy
         correct = (predictions == all_labels).sum().item()
@@ -180,8 +169,7 @@ def test_late_fusion_at_snr_levels():
         accuracy, predictions, labels = tester.test(
             audio_test_dataset,
             visual_test_dataset,
-            batch_size=32,
-            fusion_method='average'
+            batch_size=32
         )
         
         results[folder_name] = {
