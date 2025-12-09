@@ -8,4 +8,4 @@ directory = "C:/Users/thoma/Documents/GitHub/AVCoursework2/Raw_Clips/video"
 files = Path(directory).glob("*")
 for filename in files:
   name = filename.name.replace(".MOV", "")
-  video_feature_extraction.main(filename, name, "Visual_Features_No_Edge_Detection_PCA_Only", False, True, False) # Manually iterate per run
+  video_feature_extraction.main(filename, name, "Visual_Features_PCA_Only", True, False, False) # Manually iterate per run
