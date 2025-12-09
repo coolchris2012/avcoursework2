@@ -20,13 +20,11 @@ def main(path_to_video = "Raw_Clips/video/ahmed001.MOV", filename = "ahmed001", 
   final_smile_height = int(final_smile_width/2)
   if shape and PCA:
     features = np.empty((frame_count, 50*10 + 2))
-  elif shape and edge_detection:
-    features = []
-  elif shape:
+  elif shape and not edge_detection:
     features = np.empty((frame_count, 2))
-  elif PCA:
+  elif PCA and not edge_detection:
     features = np.empty((frame_count, 50, 10))
-  elif edge_detection:
+  elif edge_detection and not (shape or PCA):
     features = []
   else:
     print("No features selected")
