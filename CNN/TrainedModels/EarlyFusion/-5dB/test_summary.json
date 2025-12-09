@@ -1,0 +1,7 @@
+{
+  "modality": "early_fusion",
+  "test_loss": 2.818586802482605,
+  "accuracy": 13.125,
+  "correct": 21,
+  "total": 160
+}

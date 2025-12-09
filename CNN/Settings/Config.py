@@ -36,7 +36,7 @@ MFCC_DIR = Path("MFCCs_00")  # Directory containing MFCC .npy files
 
 # Noise settings
 ADD_NOISE = True  
-SNR_DB = 20  # Signal-to-noise ratio in dB (used when ADD_NOISE=True)
+SNR_DB = -5  # Signal-to-noise ratio in dB (used when ADD_NOISE=True)
 
 # Model saving - Create timestamped folder for each run
 from datetime import datetime
