@@ -1,0 +1,8 @@
+{
+  "modality": "visual",
+  "snr_db": null,
+  "test_loss": 5.017830038070679,
+  "accuracy": 36.25,
+  "correct": 58,
+  "total": 160
+}

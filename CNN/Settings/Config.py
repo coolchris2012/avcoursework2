@@ -31,7 +31,7 @@ LR_SCHEDULER_PARAMS: dict = {  # type: ignore
 }
 
 # Paths
-VISUAL_FEATURES_DIR = Path("Visual_Features_00")  # Directory containing visual feature .npy files
+VISUAL_FEATURES_DIR = Path("Visual_Features_Edge_Detection")  # Directory containing visual feature .npy files
 MFCC_DIR = Path("MFCCs_00")  # Directory containing MFCC .npy files
 
 # Noise settings
