@@ -131,7 +131,7 @@ def test_late_fusion_at_snr_levels():
     """
     # Paths to clean-trained models
     audio_model_path = Path("CNN/TrainedModels/Audio/BaseModel/best_model.pth")
-    visual_model_path = Path("CNN/TrainedModels/Visual/BaseModel/best_model.pth")
+    visual_model_path = Path("CNN/TrainedModels/Visual/best_model.pth")
     
     if not audio_model_path.exists():
         print(f"Audio model not found at {audio_model_path}")
@@ -196,7 +196,7 @@ def test_late_fusion_at_snr_levels():
         config.SNR_DB = original_snr
         
         # Save results
-        output_dir = Path("CNN/TrainedModels/LateFusion/BaseModel") / folder_name
+        output_dir = Path("CNN/TrainedModels/LateFusion") / folder_name
         output_dir.mkdir(parents=True, exist_ok=True)
         
         np.save(output_dir / "predictions.npy", predictions)
@@ -204,10 +204,12 @@ def test_late_fusion_at_snr_levels():
         
         # Create a dummy Tester instance to use its plotting methods
         dummy_tester = Tester(None, None, None, audio_test_dataset.classes)
-        dummy_tester.all_predictions = predictions
-        dummy_tester.all_labels = labels
+        dummy_tester.all_predictions = predictions.tolist()
+        dummy_tester.all_labels = labels.tolist()
         dummy_tester.plot_confusion_matrix(output_dir / "confusion_matrix.png", show=False)
         dummy_tester.plot_per_class_accuracy(output_dir / "per_class_accuracy.png", show=False)
+        
+        with open(output_dir / "results.txt", 'w') as f:
             f.write(f"Late Fusion Testing Results\n")
             f.write(f"SNR: {snr_db if snr_db is not None else 'Clean'}\n")
             f.write(f"Accuracy: {accuracy:.4f}\n")
